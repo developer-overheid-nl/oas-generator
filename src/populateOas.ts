@@ -226,7 +226,7 @@ const createEndpointList = function (item: {
           description: string;
           content: {
             "application/json": {
-              schema: { $ref: string };
+              schema: { type: string; items: { $ref: string } };
             };
           };
         };
@@ -255,7 +255,7 @@ const createEndpointList = function (item: {
   } = {
     "get": {
       "operationId": `list${upperCamelCase(item['plural'])}`,
-      "description": `Alle ${item['plural']} ophalen`,
+      "description": `Endpoint om alle ${item['plural']} op te halen. @TODO: Voeg hier eventueel extra informatie toe over het filteren, pagineren, etc.`,
       "summary": `Alle ${item['plural']} ophalen`,
       "tags": [
         toUppercase(item['plural'])
@@ -274,7 +274,10 @@ const createEndpointList = function (item: {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": `#/components/schemas/${toUppercase(item['name'])}`
+                "type": "array",
+                "items": {
+                  "$ref": `#/components/schemas/${toUppercase(item['name'])}`
+                }
               }
             }
           }
