@@ -288,7 +288,7 @@ const createEndpointList = function (item: {
 
   if (!item.readonly) {
     endpointList["post"] = {
-      "operationId": `create${upperCamelCase(item['plural'])}`,
+      "operationId": `create${upperCamelCase(item['name'])}`,
       "description": `Nieuwe ${item['name']} aanmaken`,
       "summary": `Nieuwe ${item['name']} aanmaken`,
       "tags": [
