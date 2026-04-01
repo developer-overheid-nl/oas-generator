@@ -2,19 +2,20 @@
 # metadata file that makes public software easily discoverable.
 # More info at https://github.com/publiccodeyml/publiccode.yml
 
-publiccodeYmlVersion: "0.4"
+publiccodeYmlVersion: "0.5"
 
 name: OAS Generator
 url: "https://github.com/developer-overheid-nl/oas-generator"
-landingURL: "https://developer-overheid-nl.github.io/oas-generator/#/gen" # optioneel
+landingURL: "https://developer-overheid-nl.github.io/oas-generator/"
 softwareType: standalone/web
-releaseDate: "1970-01-01"
+
 platforms:
   - web
 
-categories:
-  - collaboration
 developmentStatus: beta
+
+categories:
+  - it-development
 
 dependsOn:
   open:
@@ -24,18 +25,29 @@ dependsOn:
 
 description:
   nl:
+    shortDescription: >-
+      Deze generator kan worden gebruikt om een OpenAPI-specificatie te
+      maken dat voldoet aan de NL API Design Rules.
 
-    # Mand!
-    shortDescription: Deze generator kan worden gebruikt om een OpenAPI-specificatie te maken dat voldoet aan de NL API Design Rules.
+    longDescription: |
+      De OAS Generator is een webapplicatie waarmee ontwikkelaars eenvoudig
+      een OpenAPI Specification (OAS) document kunnen genereren dat voldoet
+      aan de Nederlandse API Design Rules. Op basis van minimale
+      configuratie-invoer genereert de tool een volledige OAS-boilerplate
+      die direct als startpunt kan dienen voor het ontwikkelen van API's
+      voor de Nederlandse overheid.
+
+    features:
+      - Genereer een OAS-boilerplate op basis van minimale configuratie
+      - Validatie tegen de NL API Design Rules via Spectral
 
 legal:
   license: EUPL-1.2
-  mainCopyrightOwner: Stichting Geonovum
-  repoOwner: Stichting Geonovum
-
+  mainCopyrightOwner: Geonovum
+  
 intendedAudience:
   countries:
-    - nl
+    - NL
   scope:
     - government
 
@@ -46,8 +58,7 @@ localisation:
 
 maintenance:
   type: internal
-
   contacts:
-    - name: Dimitri van Hees
-      email: d.vanhees@geonovum.nl
+    - name: developer.overheid.nl 
+      email: developer.overheid@geonovum.nl
       affiliation: Geonovum
