@@ -1,4 +1,5 @@
 {
+  "oasVersion": "3.0",
   "title": "DON API v1",
   "description": "API of developer.overheid.nl (Developer Overheid).",
   "contact": {

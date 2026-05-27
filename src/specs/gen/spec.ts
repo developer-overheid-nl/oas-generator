@@ -1,9 +1,11 @@
-import { APPLICATION_JSON_TYPE, APPLICATION_OPENAPI_JSON_3_0_TYPE } from '../../constants';
-import { spectralLinter } from '../../spectral';
-import { Spec, SpecLinter, SpecResponseMapper } from '../../types';
-import { handleResponse, handleResponseJson } from '../../util';
+import { APPLICATION_OPENAPI_JSON_3_0_TYPE } from '../../constants';
+import { schemaLinter } from '../../schemaLinter';
+import { Spec, SpecResponseMapper } from '../../types';
+import { handleResponse } from '../../util';
 import example from './example.json';
-import rulesets from './rulesets';
+import schema from './schema.json';
+
+const GEN_LINTER_NAME = 'OAS Generator syntax';
 
 const responseMapper: SpecResponseMapper = async responseText => {
   let document;
@@ -21,51 +23,24 @@ const responseMapper: SpecResponseMapper = async responseText => {
       link => link.rel === 'service-desc' && link.type === APPLICATION_OPENAPI_JSON_3_0_TYPE
     );
 
-    const conformanceLink = links.find(link => link.rel === 'conformance');
-
     if (serviceDescLink) {
       const content = await fetch(serviceDescLink.href, {
         headers: { Accept: serviceDescLink.type },
       }).then(response => handleResponse(response, serviceDescLink.href));
 
-      const linters: SpecLinter[] = [];
-
-      if (conformanceLink) {
-        const conformance = await fetch(conformanceLink.href, {
-          headers: { Accept: APPLICATION_JSON_TYPE },
-        }).then(response => handleResponseJson(response, conformanceLink.href));
-
-        const conformsTo = conformance.conformsTo;
-
-        if (Array.isArray(conformsTo)) {
-          conformsTo.forEach(reqClass => {
-            if (typeof reqClass === 'string' && rulesets[reqClass]) {
-              linters.push({
-                name: reqClass,
-                linter: spectralLinter(reqClass, rulesets[reqClass]),
-              });
-            }
-          });
-        }
-      }
-
-      return { content, linters };
+      // The fetched OpenAPI document is not generator input, so it is not linted.
+      return { content, linters: [] };
     }
   }
 
   return Promise.resolve({ content: responseText });
 };
 
-const linterName = (confClass: string) => confClass.replace('http://www.opengis.net/spec/', '');
-
 const spec: Spec = {
   name: 'Genrator',
   slug: 'gen',
   example: JSON.stringify(example, undefined, 2),
-  linters: Object.entries(rulesets).map(entry => ({
-    name: linterName(entry[0]),
-    linter: spectralLinter(linterName(entry[0]), entry[1]),
-  })),
+  linters: [{ name: GEN_LINTER_NAME, linter: schemaLinter(GEN_LINTER_NAME, schema) }],
   responseMapper,
 };
 
