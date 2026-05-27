@@ -2,6 +2,7 @@ import { kebabCase, upperCamelCase } from 'case-anything'
 
 export const populateOpenApiSpec = (inputJson: string) => {
   const content = JSON.parse(inputJson) as {
+    oasVersion?: '3.0' | '3.1';
     title: string;
     description: string;
     contact: {
@@ -13,10 +14,17 @@ export const populateOpenApiSpec = (inputJson: string) => {
       name: string;
       plural: string;
       readonly?: boolean;
+      schema?: Record<string, unknown> | string;
     }[];
   };
+
+  // The input only selects the major.minor; `schema` per resource is only
+  // honoured for OAS 3.1, which aligns with JSON Schema 2020-12.
+  const oasVersion = content.oasVersion === '3.1' ? '3.1' : '3.0';
+  const openapi = oasVersion === '3.1' ? '3.1.0' : '3.0.2';
+
   return JSON.stringify({
-    "openapi": "3.0.2",
+    "openapi": openapi,
     "info": {
       "title": content.title,
       "description": content.description,
@@ -36,9 +44,9 @@ export const populateOpenApiSpec = (inputJson: string) => {
       const tag = toUppercase(resource['plural']);
       return { "name": tag, "description": `Alle API operaties die bij ${resource['plural']} horen.` }
     }),
-    "paths": createPaths(content.resources as []),
+    "paths": createPaths(content.resources as [], oasVersion === '3.1'),
     "components": {
-      "schemas": createSchemas(content.resources as []),
+      "schemas": createSchemas(content.resources as [], oasVersion === '3.1'),
       "parameters": {
         "id": {
           "name": "id",
@@ -58,12 +66,23 @@ const toUppercase = (string: string) => {
   return string.charAt(0).toUpperCase() + string.slice(1)
 }
 
-const createPaths = (resources: []) => {
+/**
+ * Returns the `$ref` target for a resource's schema. An external schema (a URL)
+ * is referenced directly; otherwise the local component is referenced.
+ */
+const schemaRef = (item: { name: string; schema?: Record<string, unknown> | string }, allowSchema: boolean): string => {
+  if (allowSchema && typeof item['schema'] === 'string') {
+    return item['schema'];
+  }
+  return `#/components/schemas/${toUppercase(item['name'])}`;
+};
+
+const createPaths = (resources: [], allowSchema: boolean) => {
   const initialValue = {};
   return resources.reduce((obj, item) => {
 
-    const endpointList = createEndpointList(item)
-    const endpointSingle = createEndpointSingle(item)
+    const endpointList = createEndpointList(item, allowSchema)
+    const endpointSingle = createEndpointSingle(item, allowSchema)
 
     const pluralKebabCase = kebabCase(item['plural']);
 
@@ -79,7 +98,8 @@ const createEndpointSingle = function (item: {
   name: string;
   plural: string;
   readonly?: boolean;
-}) {
+  schema?: Record<string, unknown> | string;
+}, allowSchema: boolean) {
   const endpointSingle: {
     parameters: { $ref: string }[];
     get: {
@@ -144,7 +164,7 @@ const createEndpointSingle = function (item: {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": `#/components/schemas/${toUppercase(item['name'])}`
+                "$ref": schemaRef(item, allowSchema)
               }
             }
           }
@@ -175,7 +195,7 @@ const createEndpointSingle = function (item: {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": `#/components/schemas/${toUppercase(item['name'])}`
+                "$ref": schemaRef(item, allowSchema)
               }
             }
           }
@@ -210,7 +230,8 @@ const createEndpointList = function (item: {
   name: string;
   plural: string;
   readonly?: boolean;
-}) {
+  schema?: Record<string, unknown> | string;
+}, allowSchema: boolean) {
   const endpointList: {
     get: {
       operationId: string;
@@ -276,7 +297,7 @@ const createEndpointList = function (item: {
               "schema": {
                 "type": "array",
                 "items": {
-                  "$ref": `#/components/schemas/${toUppercase(item['name'])}`
+                  "$ref": schemaRef(item, allowSchema)
                 }
               }
             }
@@ -305,7 +326,7 @@ const createEndpointList = function (item: {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": `#/components/schemas/${toUppercase(item['name'])}`
+                "$ref": schemaRef(item, allowSchema)
               }
             }
           }
@@ -321,18 +342,30 @@ const createEndpointList = function (item: {
 
 }
 
-const createSchemas = (resources: []) => {
+const createSchemas = (resources: [], allowSchema: boolean) => {
   const initialValue = {};
   return resources.reduce((obj, item) => {
 
-    const objSchema = {
-      properties: {
-        id: {
-          type: "string",
-          format: "uuid",
-        }
-      }
-    };
+    const schema = item['schema'];
+
+    // An external JSON schema (a URL) is referenced directly from the
+    // operations, so it does not get a local component.
+    if (allowSchema && typeof schema === 'string') {
+      return obj;
+    }
+
+    // Inline JSON schema is used as-is; otherwise a default schema is generated.
+    const objSchema =
+      allowSchema && schema && typeof schema === 'object'
+        ? schema
+        : {
+            properties: {
+              id: {
+                type: "string",
+                format: "uuid",
+              }
+            }
+          };
 
     return {
       ...obj,

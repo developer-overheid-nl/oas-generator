@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://developer-overheid-nl.github.io/oas-generator/schema.json",
+  "title": "OAS Generator input",
+  "description": "Syntax of the input document for the OAS Generator.",
+  "type": "object",
+  "required": ["title", "description", "contact", "resources"],
+  "properties": {
+    "oasVersion": {
+      "enum": ["3.0", "3.1"],
+      "default": "3.0",
+      "description": "OpenAPI version to generate for. Defaults to \"3.0\". Resource-level \"schema\" is only allowed when this is \"3.1\"."
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Title of the API."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Description of the API."
+    },
+    "contact": {
+      "type": "object",
+      "required": ["name", "email", "url"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Name of the contact for the API."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "E-mail address of the contact for the API."
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the contact for the API."
+        }
+      }
+    },
+    "resources": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Resources to generate paths and schemas for.",
+      "items": {
+        "type": "object",
+        "required": ["name", "plural"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Singular name of the resource, e.g. \"repository\"."
+          },
+          "plural": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Plural name of the resource, e.g. \"repositories\"."
+          },
+          "readonly": {
+            "type": "boolean",
+            "description": "When true, only read operations are generated for this resource."
+          },
+          "schema": {
+            "description": "JSON schema for the resource (OAS 3.1 only): either an inline JSON schema, or a URL to an external JSON schema.",
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "uri",
+                "description": "URL of an external JSON schema."
+              },
+              {
+                "type": "object",
+                "description": "An inline JSON schema."
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "if": {
+    "required": ["oasVersion"],
+    "properties": {
+      "oasVersion": { "const": "3.1" }
+    }
+  },
+  "else": {
+    "properties": {
+      "resources": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "schema": false
+          }
+        }
+      }
+    }
+  }
+}
