@@ -105,6 +105,10 @@ const toUppercase = (string: string) => {
   return string.charAt(0).toUpperCase() + string.slice(1);
 };
 
+// Component names of a resource's schema and of its collection wrapper.
+const schemaName = (item: { name: string }): string => upperCamelCase(item['name']);
+const collectionSchemaName = (item: { name: string }): string => `${schemaName(item)}Collection`;
+
 /**
  * Returns the `$ref` target for a resource's schema. An external schema (a URL)
  * is referenced directly; otherwise the local component is referenced.
@@ -113,7 +117,7 @@ const schemaRef = (item: { name: string; schema?: Record<string, unknown> | stri
   if (allowSchema && typeof item['schema'] === 'string') {
     return item['schema'];
   }
-  return `#/components/schemas/${upperCamelCase(item['name'])}`;
+  return `#/components/schemas/${schemaName(item)}`;
 };
 
 const createPaths = (resources: [], allowSchema: boolean, componentRefs: ComponentRefs) => {
@@ -291,11 +295,7 @@ const createEndpointList = function (
           description: string;
           content: {
             'application/json': {
-              schema: {
-                type: string;
-                required: string[];
-                properties: { items: { type: string; items: { $ref: string } } };
-              };
+              schema: { $ref: string };
             };
           };
         };
@@ -341,16 +341,7 @@ const createEndpointList = function (
           content: {
             'application/json': {
               schema: {
-                type: 'object',
-                required: ['items'],
-                properties: {
-                  items: {
-                    type: 'array',
-                    items: {
-                      $ref: schemaRef(item, allowSchema),
-                    },
-                  },
-                },
+                $ref: `#/components/schemas/${collectionSchemaName(item)}`,
               },
             },
           },
@@ -396,10 +387,25 @@ const createSchemas = (resources: [], allowSchema: boolean) => {
   return resources.reduce((obj, item) => {
     const schema = item['schema'];
 
+    // Collections wrap the resources in an items key, so the response can be
+    // extended later (for example with paging metadata) without a breaking change.
+    const collectionSchema = {
+      [collectionSchemaName(item)]: {
+        type: 'object',
+        required: ['items'],
+        properties: {
+          items: {
+            type: 'array',
+            items: { $ref: schemaRef(item, allowSchema) },
+          },
+        },
+      },
+    };
+
     // An external JSON schema (a URL) is referenced directly from the
     // operations, so it does not get a local component.
     if (allowSchema && typeof schema === 'string') {
-      return obj;
+      return { ...obj, ...collectionSchema };
     }
 
     // Inline JSON schema is used as-is; otherwise a default schema is generated.
@@ -417,7 +423,8 @@ const createSchemas = (resources: [], allowSchema: boolean) => {
 
     return {
       ...obj,
-      [`${upperCamelCase(item['name'])}`]: objSchema,
+      [schemaName(item)]: objSchema,
+      ...collectionSchema,
     };
   }, initialValue);
 };

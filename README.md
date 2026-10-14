@@ -65,7 +65,8 @@ with an `id` property is generated under `components/schemas`.
 Collection endpoints (`GET /{plural}`) return an object with the resources
 wrapped in an `items` array (`{ "items": [...] }`) instead of a bare array, so
 the response can be extended later (for example with paging metadata) without a
-breaking change.
+breaking change. The wrapper is a named schema, `{Name}Collection` under
+`components/schemas`.
 
 ## Development
 
