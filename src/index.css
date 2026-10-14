@@ -18,23 +18,60 @@
   }
 }
 
-@layer base {
-  input[type='text'] {
-    @apply p-1 bg-white text-slate-700 text-sm rounded-md focus:ring-0;
-  }
-
-  select {
-    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg aria-hidden='true' xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 10 6'%3E%3Cpath stroke='%23334155' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m1 1 4 4 4-4'/%3E%3C/svg%3E");
-    background-position: right 0.75rem center;
-    background-size: 0.75em 0.75em;
-    @apply appearance-none bg-white bg-no-repeat p-2 pr-8 text-slate-700 text-sm leading-none rounded-md focus:ring-0;
-  }
-
-  button {
-    @apply px-2 py-1 rounded-md bg-blue-500;
-  }
-}
-
 .cm-selectionBackground {
   @apply bg-red-200!;
+}
+
+/* Diagnostics, ported from @geonovum/standards-checker so both tools look the same. */
+@layer components {
+  .diagnostic {
+    @apply flex items-center gap-3 mb-4 p-4 rounded-sm border shadow-lg;
+  }
+
+  .diagnostic .btn {
+    @apply inline-flex items-center px-2 py-1 rounded-sm border bg-white text-xs cursor-pointer;
+  }
+
+  .diagnostic-error {
+    @apply border-red-500 bg-red-50 text-red-700;
+  }
+
+  .diagnostic-error .btn {
+    @apply border-red-300 text-red-800 hover:bg-red-200;
+  }
+
+  .diagnostic-warning {
+    @apply border-amber-500 bg-amber-50 text-amber-800;
+  }
+
+  .diagnostic-warning .btn {
+    @apply border-amber-300 text-amber-800 hover:bg-amber-400;
+  }
+
+  .diagnostic-info,
+  .diagnostic-hint {
+    @apply border-slate-200 bg-slate-50 text-slate-800;
+  }
+
+  .diagnostic-info .btn,
+  .diagnostic-hint .btn {
+    @apply border-slate-300 text-slate-800 hover:bg-slate-200;
+  }
+
+  .severity-group {
+    @apply mb-1 px-3 py-1.5 rounded-sm text-sm font-semibold text-white;
+  }
+
+  .severity-group-error {
+    @apply bg-red-400;
+  }
+
+  .severity-group-warning {
+    @apply bg-orange-400;
+  }
+
+  .severity-group-info,
+  .severity-group-hint {
+    @apply bg-blue-400;
+  }
 }

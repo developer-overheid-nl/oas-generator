@@ -18,13 +18,11 @@ type GeneratedDocument = {
     Record<
       string,
       {
-        responses: Record<
-          string,
-          { $ref?: string; headers?: unknown; content: Record<string, { schema: unknown }> }
-        >;
+        responses: Record<string, { $ref?: string; headers?: unknown; content: Record<string, { schema: unknown }> }>;
       }
     >
   >;
+  components: Record<string, Record<string, unknown>>;
 };
 
 const generate = (input: Record<string, unknown>): GeneratedDocument =>
@@ -58,6 +56,9 @@ describe('populateOpenApiSpec', () => {
   it.each(['3.0', '3.1'])('wraps the collection in an items key (OAS %s)', oasVersion => {
     const output = generate({ ...baseInput, oasVersion });
     expect(output.paths['/repositories'].get.responses['200'].content['application/json'].schema).toEqual({
+      $ref: '#/components/schemas/RepositoryCollection',
+    });
+    expect(output.components.schemas.RepositoryCollection).toEqual({
       type: 'object',
       required: ['items'],
       properties: {
@@ -65,6 +66,20 @@ describe('populateOpenApiSpec', () => {
           type: 'array',
           items: { $ref: '#/components/schemas/Repository' },
         },
+      },
+    });
+  });
+
+  it('wraps an external resource schema in a local collection schema', () => {
+    const output = generate({
+      ...baseInput,
+      resources: [{ name: 'repository', plural: 'repositories', schema: 'https://example.com/repository.json' }],
+    });
+    expect(output.components.schemas).toEqual({
+      RepositoryCollection: {
+        type: 'object',
+        required: ['items'],
+        properties: { items: { type: 'array', items: { $ref: 'https://example.com/repository.json' } } },
       },
     });
   });
@@ -98,6 +113,14 @@ describe('populateOpenApiSpec', () => {
     expect(output.paths['/repositories/{id}'].delete.responses).toEqual({
       '204': { $ref: `${legacyComponentsUrl}#/responses/204` },
       '404': { $ref: `${legacyComponentsUrl}#/responses/404` },
+    });
+  });
+
+  it('references the schema component by the name it is defined under', () => {
+    const output = generate({ ...baseInput, resources: [{ name: 'dataset-version', plural: 'dataset-versions' }] });
+    expect(output.components.schemas).toHaveProperty('DatasetVersion');
+    expect(output.paths['/dataset-versions/{id}'].get.responses['200'].content['application/json'].schema).toEqual({
+      $ref: '#/components/schemas/DatasetVersion',
     });
   });
 

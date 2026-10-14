@@ -1,4 +1,4 @@
-import { kebabCase, upperCamelCase } from 'case-anything'
+import { kebabCase, upperCamelCase } from 'case-anything';
 
 export const populateOpenApiSpec = (inputJson: string) => {
   const content = JSON.parse(inputJson) as {
@@ -23,44 +23,48 @@ export const populateOpenApiSpec = (inputJson: string) => {
   const oasVersion = content.oasVersion === '3.0' ? '3.0' : '3.1';
   const openapi = oasVersion === '3.1' ? '3.1.0' : '3.0.2';
 
-  return JSON.stringify({
-    "openapi": openapi,
-    "info": {
-      "title": content.title,
-      "description": content.description,
-      "version": "1.0.0",
-      "contact": {
-        "name": content.contact.name,
-        "email": content.contact.email,
-        "url": content.contact.url
-      }
+  return JSON.stringify(
+    {
+      openapi: openapi,
+      info: {
+        title: content.title,
+        description: content.description,
+        version: '1.0.0',
+        contact: {
+          name: content.contact.name,
+          email: content.contact.email,
+          url: content.contact.url,
+        },
+      },
+      servers: [
+        {
+          url: '@TODO: Add server URL',
+        },
+      ],
+      tags: content.resources.map(resource => {
+        const tag = toUppercase(resource['plural']);
+        return { name: tag, description: `Alle API operaties die bij ${resource['plural']} horen.` };
+      }),
+      paths: createPaths(content.resources as [], oasVersion === '3.1', createComponentRefs(oasVersion)),
+      components: {
+        schemas: createSchemas(content.resources as [], oasVersion === '3.1'),
+        parameters: {
+          id: {
+            name: 'id',
+            in: 'path',
+            description: 'id',
+            required: true,
+            schema: {
+              type: 'string',
+            },
+          },
+        },
+      },
     },
-    "servers": [
-      {
-        "url": "@TODO: Add server URL",
-      }
-    ],
-    "tags": content.resources.map(resource => {
-      const tag = toUppercase(resource['plural']);
-      return { "name": tag, "description": `Alle API operaties die bij ${resource['plural']} horen.` }
-    }),
-    "paths": createPaths(content.resources as [], oasVersion === '3.1', createComponentRefs(oasVersion)),
-    "components": {
-      "schemas": createSchemas(content.resources as [], oasVersion === '3.1'),
-      "parameters": {
-        "id": {
-          "name": "id",
-          "in": "path",
-          "description": "id",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        }
-      }
-    }
-  }, undefined, 2)
-}
+    undefined,
+    2,
+  );
+};
 
 type ComponentRefs = {
   apiVersionHeader: string;
@@ -98,8 +102,12 @@ const createComponentRefs = (oasVersion: '3.0' | '3.1'): ComponentRefs => {
 };
 
 const toUppercase = (string: string) => {
-  return string.charAt(0).toUpperCase() + string.slice(1)
-}
+  return string.charAt(0).toUpperCase() + string.slice(1);
+};
+
+// Component names of a resource's schema and of its collection wrapper.
+const schemaName = (item: { name: string }): string => upperCamelCase(item['name']);
+const collectionSchemaName = (item: { name: string }): string => `${schemaName(item)}Collection`;
 
 /**
  * Returns the `$ref` target for a resource's schema. An external schema (a URL)
@@ -109,15 +117,14 @@ const schemaRef = (item: { name: string; schema?: Record<string, unknown> | stri
   if (allowSchema && typeof item['schema'] === 'string') {
     return item['schema'];
   }
-  return `#/components/schemas/${toUppercase(item['name'])}`;
+  return `#/components/schemas/${schemaName(item)}`;
 };
 
 const createPaths = (resources: [], allowSchema: boolean, componentRefs: ComponentRefs) => {
   const initialValue = {};
   return resources.reduce((obj, item) => {
-
-    const endpointList = createEndpointList(item, allowSchema, componentRefs)
-    const endpointSingle = createEndpointSingle(item, allowSchema, componentRefs)
+    const endpointList = createEndpointList(item, allowSchema, componentRefs);
+    const endpointSingle = createEndpointSingle(item, allowSchema, componentRefs);
 
     const pluralKebabCase = kebabCase(item['plural']);
 
@@ -129,12 +136,16 @@ const createPaths = (resources: [], allowSchema: boolean, componentRefs: Compone
   }, initialValue);
 };
 
-const createEndpointSingle = function (item: {
-  name: string;
-  plural: string;
-  readonly?: boolean;
-  schema?: Record<string, unknown> | string;
-}, allowSchema: boolean, componentRefs: ComponentRefs) {
+const createEndpointSingle = function (
+  item: {
+    name: string;
+    plural: string;
+    readonly?: boolean;
+    schema?: Record<string, unknown> | string;
+  },
+  allowSchema: boolean,
+  componentRefs: ComponentRefs,
+) {
   const endpointSingle: {
     parameters: { $ref: string }[];
     get: {
@@ -143,12 +154,12 @@ const createEndpointSingle = function (item: {
       summary: string;
       tags: string[];
       responses: {
-        "200": {
-          headers: { "API-Version": { $ref: string } };
+        '200': {
+          headers: { 'API-Version': { $ref: string } };
           description: string;
-          content: { "application/json": { schema: { $ref: string } } };
+          content: { 'application/json': { schema: { $ref: string } } };
         };
-        "404": { $ref: string };
+        '404': { $ref: string };
       };
     };
     put?: {
@@ -157,13 +168,13 @@ const createEndpointSingle = function (item: {
       summary: string;
       tags: string[];
       responses: {
-        "200": {
-          headers: { "API-Version": { $ref: string } };
+        '200': {
+          headers: { 'API-Version': { $ref: string } };
           description: string;
-          content: { "application/json": { schema: { $ref: string } } };
+          content: { 'application/json': { schema: { $ref: string } } };
         };
-        "400": { $ref: string };
-        "404": { $ref: string };
+        '400': { $ref: string };
+        '404': { $ref: string };
       };
     };
     delete?: {
@@ -172,105 +183,103 @@ const createEndpointSingle = function (item: {
       summary: string;
       tags: string[];
       responses: {
-        "204": { $ref: string };
-        "404": { $ref: string };
+        '204': { $ref: string };
+        '404': { $ref: string };
       };
     };
   } = {
-    "parameters": [
+    parameters: [
       {
-        "$ref": "#/components/parameters/id"
-      }
+        $ref: '#/components/parameters/id',
+      },
     ],
-    "get": {
-      "operationId": `retrieve${upperCamelCase(item['name'])}`,
-      "description": `${toUppercase(item['name'])} ophalen`,
-      "summary": `${toUppercase(item['name'])} ophalen`,
-      "tags": [
-        toUppercase(item['plural']),
-      ],
-      "responses": {
-        "200": {
-          "headers": {
-            "API-Version": {
-              "$ref": componentRefs.apiVersionHeader
-            }
+    get: {
+      operationId: `retrieve${upperCamelCase(item['name'])}`,
+      description: `${toUppercase(item['name'])} ophalen`,
+      summary: `${toUppercase(item['name'])} ophalen`,
+      tags: [toUppercase(item['plural'])],
+      responses: {
+        '200': {
+          headers: {
+            'API-Version': {
+              $ref: componentRefs.apiVersionHeader,
+            },
           },
-          "description": "OK",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": schemaRef(item, allowSchema)
-              }
-            }
-          }
+          description: 'OK',
+          content: {
+            'application/json': {
+              schema: {
+                $ref: schemaRef(item, allowSchema),
+              },
+            },
+          },
         },
-        "404": {
-          "$ref": componentRefs.notFound
-        }
-      }
-    }
-  }
+        '404': {
+          $ref: componentRefs.notFound,
+        },
+      },
+    },
+  };
 
   if (!item.readonly) {
-    endpointSingle["put"] = {
-      "operationId": `edit${upperCamelCase(item['name'])}`,
-      "description": `${toUppercase(item['name'])} wijzigen`,
-      "summary": `${toUppercase(item['name'])} wijzigen`,
-      "tags": [
-        toUppercase(item['plural']),
-      ],
-      "responses": {
-        "200": {
-          "headers": {
-            "API-Version": {
-              "$ref": componentRefs.apiVersionHeader
-            }
+    endpointSingle['put'] = {
+      operationId: `edit${upperCamelCase(item['name'])}`,
+      description: `${toUppercase(item['name'])} wijzigen`,
+      summary: `${toUppercase(item['name'])} wijzigen`,
+      tags: [toUppercase(item['plural'])],
+      responses: {
+        '200': {
+          headers: {
+            'API-Version': {
+              $ref: componentRefs.apiVersionHeader,
+            },
           },
-          "description": "OK",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": schemaRef(item, allowSchema)
-              }
-            }
-          }
+          description: 'OK',
+          content: {
+            'application/json': {
+              schema: {
+                $ref: schemaRef(item, allowSchema),
+              },
+            },
+          },
         },
-        "400": {
-          "$ref": componentRefs.badRequest
+        '400': {
+          $ref: componentRefs.badRequest,
         },
-        "404": {
-          "$ref": componentRefs.notFound
-        }
-      }
-    }
-    endpointSingle["delete"] = {
-      "operationId": `remove${upperCamelCase(item['name'])}`,
-      "description": `${toUppercase(item['name'])} verwijderen`,
-      "summary": `${toUppercase(item['name'])} verwijderen`,
-      "tags": [
-        toUppercase(item['plural']),
-      ],
-      "responses": {
-        "204": {
-          "$ref": componentRefs.noContent
+        '404': {
+          $ref: componentRefs.notFound,
         },
-        "404": {
-          "$ref": componentRefs.notFound
-        }
-      }
-    }
+      },
+    };
+    endpointSingle['delete'] = {
+      operationId: `remove${upperCamelCase(item['name'])}`,
+      description: `${toUppercase(item['name'])} verwijderen`,
+      summary: `${toUppercase(item['name'])} verwijderen`,
+      tags: [toUppercase(item['plural'])],
+      responses: {
+        '204': {
+          $ref: componentRefs.noContent,
+        },
+        '404': {
+          $ref: componentRefs.notFound,
+        },
+      },
+    };
   }
 
   return endpointSingle;
-}
+};
 
-const createEndpointList = function (item: {
-  name: string;
-  plural: string;
-  readonly?: boolean;
-  schema?: Record<string, unknown> | string;
-}, allowSchema: boolean, componentRefs: ComponentRefs) {
+const createEndpointList = function (
+  item: {
+    name: string;
+    plural: string;
+    readonly?: boolean;
+    schema?: Record<string, unknown> | string;
+  },
+  allowSchema: boolean,
+  componentRefs: ComponentRefs,
+) {
   const endpointList: {
     get: {
       operationId: string;
@@ -278,19 +287,15 @@ const createEndpointList = function (item: {
       summary: string;
       tags: string[];
       responses: {
-        "200": {
+        '200': {
           headers: {
-            "API-Version": { $ref: string };
+            'API-Version': { $ref: string };
             Link: { $ref: string };
           };
           description: string;
           content: {
-            "application/json": {
-              schema: {
-                type: string;
-                required: string[];
-                properties: { items: { type: string; items: { $ref: string } } };
-              };
+            'application/json': {
+              schema: { $ref: string };
             };
           };
         };
@@ -302,105 +307,105 @@ const createEndpointList = function (item: {
       summary: string;
       tags: string[];
       responses: {
-        "201": {
+        '201': {
           headers: {
-            "API-Version": { $ref: string };
+            'API-Version': { $ref: string };
           };
           description: string;
           content: {
-            "application/json": {
+            'application/json': {
               schema: { $ref: string };
             };
           };
         };
-        "400": { $ref: string };
+        '400': { $ref: string };
       };
     };
   } = {
-    "get": {
-      "operationId": `list${upperCamelCase(item['plural'])}`,
-      "description": `Endpoint om alle ${item['plural']} op te halen. @TODO: Voeg hier eventueel extra informatie toe over het filteren, pagineren, etc.`,
-      "summary": `Alle ${item['plural']} ophalen`,
-      "tags": [
-        toUppercase(item['plural'])
-      ],
-      "responses": {
-        "200": {
-          "headers": {
-            "API-Version": {
-              "$ref": componentRefs.apiVersionHeader
+    get: {
+      operationId: `list${upperCamelCase(item['plural'])}`,
+      description: `Endpoint om alle ${item['plural']} op te halen. @TODO: Voeg hier eventueel extra informatie toe over het filteren, pagineren, etc.`,
+      summary: `Alle ${item['plural']} ophalen`,
+      tags: [toUppercase(item['plural'])],
+      responses: {
+        '200': {
+          headers: {
+            'API-Version': {
+              $ref: componentRefs.apiVersionHeader,
             },
-            "Link": {
-              "$ref": componentRefs.linkHeader
-            }
+            Link: {
+              $ref: componentRefs.linkHeader,
+            },
           },
-          "description": "OK",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": ["items"],
-                "properties": {
-                  "items": {
-                    "type": "array",
-                    "items": {
-                      "$ref": schemaRef(item, allowSchema)
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
+          description: 'OK',
+          content: {
+            'application/json': {
+              schema: {
+                $ref: `#/components/schemas/${collectionSchemaName(item)}`,
+              },
+            },
+          },
+        },
+      },
     },
-  }
+  };
 
   if (!item.readonly) {
-    endpointList["post"] = {
-      "operationId": `create${upperCamelCase(item['name'])}`,
-      "description": `Nieuwe ${item['name']} aanmaken`,
-      "summary": `Nieuwe ${item['name']} aanmaken`,
-      "tags": [
-        toUppercase(item['plural']),
-      ],
-      "responses": {
-        "201": {
-          "headers": {
-            "API-Version": {
-              "$ref": componentRefs.apiVersionHeader
-            }
+    endpointList['post'] = {
+      operationId: `create${upperCamelCase(item['name'])}`,
+      description: `Nieuwe ${item['name']} aanmaken`,
+      summary: `Nieuwe ${item['name']} aanmaken`,
+      tags: [toUppercase(item['plural'])],
+      responses: {
+        '201': {
+          headers: {
+            'API-Version': {
+              $ref: componentRefs.apiVersionHeader,
+            },
           },
-          "description": "Created",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": schemaRef(item, allowSchema)
-              }
-            }
-          }
+          description: 'Created',
+          content: {
+            'application/json': {
+              schema: {
+                $ref: schemaRef(item, allowSchema),
+              },
+            },
+          },
         },
-        "400": {
-          "$ref": componentRefs.badRequest
-        }
-      }
-    }
+        '400': {
+          $ref: componentRefs.badRequest,
+        },
+      },
+    };
   }
 
-  return endpointList
-
-}
+  return endpointList;
+};
 
 const createSchemas = (resources: [], allowSchema: boolean) => {
   const initialValue = {};
   return resources.reduce((obj, item) => {
-
     const schema = item['schema'];
+
+    // Collections wrap the resources in an items key, so the response can be
+    // extended later (for example with paging metadata) without a breaking change.
+    const collectionSchema = {
+      [collectionSchemaName(item)]: {
+        type: 'object',
+        required: ['items'],
+        properties: {
+          items: {
+            type: 'array',
+            items: { $ref: schemaRef(item, allowSchema) },
+          },
+        },
+      },
+    };
 
     // An external JSON schema (a URL) is referenced directly from the
     // operations, so it does not get a local component.
     if (allowSchema && typeof schema === 'string') {
-      return obj;
+      return { ...obj, ...collectionSchema };
     }
 
     // Inline JSON schema is used as-is; otherwise a default schema is generated.
@@ -410,17 +415,16 @@ const createSchemas = (resources: [], allowSchema: boolean) => {
         : {
             properties: {
               id: {
-                type: "string",
-                format: "uuid",
-              }
-            }
+                type: 'string',
+                format: 'uuid',
+              },
+            },
           };
 
     return {
       ...obj,
-      [`${upperCamelCase(item['name'])}`]: objSchema,
+      [schemaName(item)]: objSchema,
+      ...collectionSchema,
     };
   }, initialValue);
 };
-
-export default populateOpenApiSpec;

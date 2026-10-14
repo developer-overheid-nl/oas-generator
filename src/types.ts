@@ -5,17 +5,9 @@ export interface Spec {
   slug: string;
   example: string;
   linters: SpecLinter[];
-  responseMapper?: SpecResponseMapper;
-}
-
-export interface SpecInput {
-  content: string;
-  linters?: SpecLinter[];
 }
 
 export type SpecLinter = {
   name: string;
   linter: Extension;
 };
-
-export type SpecResponseMapper = (responseText: string) => Promise<SpecInput>;

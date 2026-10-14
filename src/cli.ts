@@ -119,8 +119,8 @@ const main = async (): Promise<void> => {
   let data: unknown;
   try {
     data = JSON.parse(raw);
-  } catch (error) {
-    throw new Error(`Input is not valid JSON: ${(error as Error).message}`);
+  } catch (e) {
+    throw new Error(`Input is not valid JSON: ${(e as Error).message}`, { cause: e });
   }
 
   const errors = validateInput(data);
