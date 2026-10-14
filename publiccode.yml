@@ -17,12 +17,6 @@ developmentStatus: beta
 categories:
   - it-development
 
-dependsOn:
-  open:
-    - name: spectral
-      optional: false
-      versionMin: '1.20.0'
-
 description:
   nl:
     shortDescription: >-
