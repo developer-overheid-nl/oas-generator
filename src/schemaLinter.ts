@@ -4,6 +4,7 @@ import { Diagnostic, linter } from '@codemirror/lint';
 import { Extension } from '@uiw/react-codemirror';
 import addFormats from 'ajv-formats';
 import Ajv, { AnySchemaObject } from 'ajv/dist/2020';
+import { detectEncoding } from './encodings';
 
 // The concrete syntax-node type used by the JSON language, derived without
 // importing @lezer/common directly (which is not a direct dependency).
@@ -39,11 +40,7 @@ const propertyValue = (property: SyntaxNode): SyntaxNode | null => {
   return null;
 };
 
-const findProperty = (
-  object: SyntaxNode,
-  key: string,
-  sliceDoc: (from: number, to: number) => string
-): SyntaxNode | null => {
+const findProperty = (object: SyntaxNode, key: string, sliceDoc: (from: number, to: number) => string): SyntaxNode | null => {
   for (let child = object.firstChild; child; child = child.nextSibling) {
     if (child.name !== 'Property') {
       continue;
@@ -79,14 +76,19 @@ export const resolveRange = (
   root: SyntaxNode | null,
   pointer: string,
   sliceDoc: (from: number, to: number) => string,
-  docLength: number
+  docLength: number,
 ): { from: number; to: number } => {
   if (!root) {
     return { from: 0, to: docLength };
   }
 
   const segments =
-    pointer === '' ? [] : pointer.split('/').slice(1).map(segment => segment.replace(/~1/g, '/').replace(/~0/g, '~'));
+    pointer === ''
+      ? []
+      : pointer
+          .split('/')
+          .slice(1)
+          .map(segment => segment.replace(/~1/g, '/').replace(/~0/g, '~'));
 
   let target = root;
 
@@ -117,9 +119,86 @@ export const resolveRange = (
   return { from: target.from, to: target.to };
 };
 
+const YAML_KEY_LINE = /^(\s*)(?:-\s+)?(?:(?:"([^"]*)")|(?:'([^']*)')|([^"':\s#][^:#]*))\s*:/;
+
 /**
- * Creates a CodeMirror linter that validates the JSON document against a JSON
- * Schema using Ajv, mapping each violation to a range in the editor.
+ * Maps every key path in a YAML document to the line it is defined on. Keys of
+ * mappings inside sequences are recorded without the item index.
+ */
+const buildYamlPathLines = (lines: string[]): Map<string, { line: number; indent: number }> => {
+  const pathLines = new Map<string, { line: number; indent: number }>();
+  const stack: { indent: number; key: string }[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const match = lines[i].match(YAML_KEY_LINE);
+    if (!match) {
+      continue;
+    }
+
+    const indent = match[1].length;
+    const key = (match[2] ?? match[3] ?? match[4]).trim();
+
+    while (stack.length > 0 && stack[stack.length - 1].indent >= indent) {
+      stack.pop();
+    }
+    stack.push({ indent, key });
+    pathLines.set(stack.map(entry => entry.key).join('\0'), { line: i, indent });
+  }
+
+  return pathLines;
+};
+
+/**
+ * Resolves a JSON Pointer to a range in a YAML document, line based. It
+ * highlights the deepest key on the pointer that it can find, including its
+ * nested block; array indices are not resolved, so an error inside a sequence
+ * item lands on the sequence itself.
+ *
+ * @param content The YAML document
+ * @param pointer The JSON Pointer to the offending value
+ */
+export const resolveYamlRange = (content: string, pointer: string): { from: number; to: number } => {
+  const lines = content.split('\n');
+  const lineStarts: number[] = [0];
+  for (let i = 1; i < lines.length; i++) {
+    lineStarts.push(lineStarts[i - 1] + lines[i - 1].length + 1);
+  }
+  const pathLines = buildYamlPathLines(lines);
+  const keys =
+    pointer === ''
+      ? []
+      : pointer
+          .split('/')
+          .slice(1)
+          .map(segment => segment.replace(/~1/g, '/').replace(/~0/g, '~'));
+
+  for (let length = keys.length; length > 0; length--) {
+    const entry = pathLines.get(keys.slice(0, length).join('\0'));
+    if (entry === undefined) {
+      continue;
+    }
+
+    let endLine = entry.line;
+    for (let i = entry.line + 1; i < lines.length; i++) {
+      const trimmed = lines[i].trimStart();
+      if (trimmed === '' || trimmed.startsWith('#')) {
+        continue;
+      }
+      if (lines[i].search(/\S/) <= entry.indent) {
+        break;
+      }
+      endLine = i;
+    }
+
+    return { from: lineStarts[entry.line], to: lineStarts[endLine] + lines[endLine].length };
+  }
+
+  return { from: 0, to: lines[0].length };
+};
+
+/**
+ * Creates a CodeMirror linter that validates the JSON or YAML document against
+ * a JSON Schema using Ajv, mapping each violation to a range in the editor.
  *
  * @param name    The source name used to group the diagnostics
  * @param schema  The JSON Schema to validate against
@@ -130,12 +209,14 @@ export const schemaLinter = (name: string, schema: object): Extension => {
   const validate = ajv.compile(schema as AnySchemaObject);
 
   return linter(view => {
+    const content = view.state.doc.toString();
+    const encoding = detectEncoding(content);
     let data: unknown;
 
     try {
-      data = JSON.parse(view.state.doc.toString());
+      data = encoding.parse(content);
     } catch {
-      // Invalid JSON is already reported by the JSON parse linter.
+      // Unparseable content is detected as JSON and reported by the JSON parse linter.
       return [];
     }
 
@@ -144,7 +225,10 @@ export const schemaLinter = (name: string, schema: object): Extension => {
     }
 
     const sliceDoc = (from: number, to: number) => view.state.doc.sliceString(from, to);
-    const root = firstValueChild(syntaxTree(view.state).topNode);
+    const resolve = (path: string) =>
+      encoding.id === 'yaml'
+        ? resolveYamlRange(content, path)
+        : resolveRange(firstValueChild(syntaxTree(view.state).topNode), path, sliceDoc, view.state.doc.length);
 
     return betterAjvErrors(schema as AnySchemaObject, validate.errors ?? [], {
       propertyPath: [],
@@ -153,7 +237,7 @@ export const schemaLinter = (name: string, schema: object): Extension => {
       source: name,
       severity: 'error',
       message: suggestion !== undefined ? `${error}. ${suggestion}` : error,
-      ...resolveRange(root, path, sliceDoc, view.state.doc.length),
+      ...resolve(path),
     }));
   });
 };
