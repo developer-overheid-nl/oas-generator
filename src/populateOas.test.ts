@@ -100,6 +100,13 @@ describe('populateOpenApiSpec', () => {
       '404': { $ref: `${legacyComponentsUrl}#/responses/404` },
     });
   });
+
+  it('lets PUT return 404 for a resource that does not exist', () => {
+    const output = generate(baseInput);
+    expect(output.paths['/repositories/{id}'].put.responses['404']).toEqual({
+      $ref: 'https://static.developer.overheid.nl/openapi-components/adr/2.2/common.yaml#/components/responses/NotFound',
+    });
+  });
 });
 
 describe('input schema', () => {

@@ -163,6 +163,7 @@ const createEndpointSingle = function (item: {
           content: { "application/json": { schema: { $ref: string } } };
         };
         "400": { $ref: string };
+        "404": { $ref: string };
       };
     };
     delete?: {
@@ -237,6 +238,9 @@ const createEndpointSingle = function (item: {
         },
         "400": {
           "$ref": componentRefs.badRequest
+        },
+        "404": {
+          "$ref": componentRefs.notFound
         }
       }
     }
