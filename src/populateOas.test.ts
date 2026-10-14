@@ -18,10 +18,7 @@ type GeneratedDocument = {
     Record<
       string,
       {
-        responses: Record<
-          string,
-          { $ref?: string; headers?: unknown; content: Record<string, { schema: unknown }> }
-        >;
+        responses: Record<string, { $ref?: string; headers?: unknown; content: Record<string, { schema: unknown }> }>;
       }
     >
   >;

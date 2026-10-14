@@ -46,13 +46,13 @@ Pin a branch or tag with a `#` suffix (e.g. `github:developer-overheid-nl/oas-ge
 
 ### Input format
 
-| Field | Required | Description |
-| --- | --- | --- |
-| `oasVersion` | no | OpenAPI version to generate for: `"3.1"` (default) or `"3.0"`. |
-| `title` | yes | Title of the API. |
-| `description` | yes | Description of the API. |
-| `contact` | yes | `name`, `email` and `url` of the contact. |
-| `resources` | yes | Array of resources (at least one). |
+| Field         | Required | Description                                                    |
+| ------------- | -------- | -------------------------------------------------------------- |
+| `oasVersion`  | no       | OpenAPI version to generate for: `"3.1"` (default) or `"3.0"`. |
+| `title`       | yes      | Title of the API.                                              |
+| `description` | yes      | Description of the API.                                        |
+| `contact`     | yes      | `name`, `email` and `url` of the contact.                      |
+| `resources`   | yes      | Array of resources (at least one).                             |
 
 Each resource has a `name` and `plural`, an optional `readonly` boolean, and an
 optional `schema`. A `schema` is **not allowed when `oasVersion` is `"3.0"`** and

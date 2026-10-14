@@ -2,11 +2,11 @@
 # metadata file that makes public software easily discoverable.
 # More info at https://github.com/publiccodeyml/publiccode.yml
 
-publiccodeYmlVersion: "0.5"
+publiccodeYmlVersion: '0.5'
 
 name: OAS Generator
-url: "https://github.com/developer-overheid-nl/oas-generator"
-landingURL: "https://developer-overheid-nl.github.io/oas-generator/"
+url: 'https://github.com/developer-overheid-nl/oas-generator'
+landingURL: 'https://developer-overheid-nl.github.io/oas-generator/'
 softwareType: standalone/web
 
 platforms:
@@ -21,7 +21,7 @@ dependsOn:
   open:
     - name: spectral
       optional: false
-      versionMin: "1.20.0"
+      versionMin: '1.20.0'
 
 description:
   nl:
@@ -44,7 +44,7 @@ description:
 legal:
   license: EUPL-1.2
   mainCopyrightOwner: Geonovum
-  
+
 intendedAudience:
   countries:
     - NL
@@ -59,6 +59,6 @@ localisation:
 maintenance:
   type: internal
   contacts:
-    - name: developer.overheid.nl 
+    - name: developer.overheid.nl
       email: developer.overheid@geonovum.nl
       affiliation: Geonovum
