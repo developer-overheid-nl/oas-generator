@@ -15,7 +15,15 @@ type GeneratedDocument = {
   openapi: string;
   paths: Record<
     string,
-    Record<string, { responses: Record<string, { content: Record<string, { schema: unknown }> }> }>
+    Record<
+      string,
+      {
+        responses: Record<
+          string,
+          { $ref?: string; headers?: unknown; content: Record<string, { schema: unknown }> }
+        >;
+      }
+    >
   >;
 };
 
@@ -58,6 +66,38 @@ describe('populateOpenApiSpec', () => {
           items: { $ref: '#/components/schemas/Repository' },
         },
       },
+    });
+  });
+
+  it('references the ADR 2.2 common components for OAS 3.1', () => {
+    const commonComponentsUrl = 'https://static.developer.overheid.nl/openapi-components/adr/2.2/common.yaml';
+    const output = generate(baseInput);
+    expect(output.paths['/repositories'].get.responses['200'].headers).toEqual({
+      'API-Version': { $ref: `${commonComponentsUrl}#/components/headers/API-Version` },
+      Link: { $ref: `${commonComponentsUrl}#/components/headers/Link` },
+    });
+    expect(output.paths['/repositories'].post.responses['400']).toEqual({
+      $ref: `${commonComponentsUrl}#/components/responses/BadRequest`,
+    });
+    expect(output.paths['/repositories/{id}'].delete.responses).toEqual({
+      '204': { $ref: `${commonComponentsUrl}#/components/responses/NoContent` },
+      '404': { $ref: `${commonComponentsUrl}#/components/responses/NotFound` },
+    });
+  });
+
+  it('keeps referencing the legacy ADR components for OAS 3.0', () => {
+    const legacyComponentsUrl = 'https://static.developer.overheid.nl/adr/components.yaml';
+    const output = generate({ ...baseInput, oasVersion: '3.0' });
+    expect(output.paths['/repositories'].get.responses['200'].headers).toEqual({
+      'API-Version': { $ref: `${legacyComponentsUrl}#/headers/API-Version` },
+      Link: { $ref: `${legacyComponentsUrl}#/headers/Link` },
+    });
+    expect(output.paths['/repositories'].post.responses['400']).toEqual({
+      $ref: `${legacyComponentsUrl}#/responses/400`,
+    });
+    expect(output.paths['/repositories/{id}'].delete.responses).toEqual({
+      '204': { $ref: `${legacyComponentsUrl}#/responses/204` },
+      '404': { $ref: `${legacyComponentsUrl}#/responses/404` },
     });
   });
 });
