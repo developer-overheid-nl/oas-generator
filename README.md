@@ -48,19 +48,24 @@ Pin a branch or tag with a `#` suffix (e.g. `github:developer-overheid-nl/oas-ge
 
 | Field | Required | Description |
 | --- | --- | --- |
-| `oasVersion` | no | OpenAPI version to generate for: `"3.0"` (default) or `"3.1"`. |
+| `oasVersion` | no | OpenAPI version to generate for: `"3.1"` (default) or `"3.0"`. |
 | `title` | yes | Title of the API. |
 | `description` | yes | Description of the API. |
 | `contact` | yes | `name`, `email` and `url` of the contact. |
 | `resources` | yes | Array of resources (at least one). |
 
 Each resource has a `name` and `plural`, an optional `readonly` boolean, and an
-optional `schema`. A `schema` is **only allowed when `oasVersion` is `"3.1"`** and
+optional `schema`. A `schema` is **not allowed when `oasVersion` is `"3.0"`** and
 can be either an inline JSON schema (object) or a URL string pointing to an
 external JSON schema. An inline schema is added under `components/schemas` and
 referenced locally; an external schema (URL) is referenced directly with a
 `$ref` from the operations (no local component). When omitted, a default schema
 with an `id` property is generated under `components/schemas`.
+
+Collection endpoints (`GET /{plural}`) return an object with the resources
+wrapped in an `items` array (`{ "items": [...] }`) instead of a bare array, so
+the response can be extended later (for example with paging metadata) without a
+breaking change.
 
 ## Development
 

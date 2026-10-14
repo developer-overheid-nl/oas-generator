@@ -8,8 +8,8 @@
   "properties": {
     "oasVersion": {
       "enum": ["3.0", "3.1"],
-      "default": "3.0",
-      "description": "OpenAPI version to generate for. Defaults to \"3.0\". Resource-level \"schema\" is only allowed when this is \"3.1\"."
+      "default": "3.1",
+      "description": "OpenAPI version to generate for. Defaults to \"3.1\". Resource-level \"schema\" is only allowed when this is \"3.1\"."
     },
     "title": {
       "type": "string",
@@ -85,10 +85,10 @@
   "if": {
     "required": ["oasVersion"],
     "properties": {
-      "oasVersion": { "const": "3.1" }
+      "oasVersion": { "const": "3.0" }
     }
   },
-  "else": {
+  "then": {
     "properties": {
       "resources": {
         "type": "array",

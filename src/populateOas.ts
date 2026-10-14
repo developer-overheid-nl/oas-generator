@@ -18,9 +18,9 @@ export const populateOpenApiSpec = (inputJson: string) => {
     }[];
   };
 
-  // The input only selects the major.minor; `schema` per resource is only
-  // honoured for OAS 3.1, which aligns with JSON Schema 2020-12.
-  const oasVersion = content.oasVersion === '3.1' ? '3.1' : '3.0';
+  // The input only selects the major.minor and defaults to 3.1; `schema` per
+  // resource is only honoured for OAS 3.1, which aligns with JSON Schema 2020-12.
+  const oasVersion = content.oasVersion === '3.0' ? '3.0' : '3.1';
   const openapi = oasVersion === '3.1' ? '3.1.0' : '3.0.2';
 
   return JSON.stringify({
@@ -247,7 +247,11 @@ const createEndpointList = function (item: {
           description: string;
           content: {
             "application/json": {
-              schema: { type: string; items: { $ref: string } };
+              schema: {
+                type: string;
+                required: string[];
+                properties: { items: { type: string; items: { $ref: string } } };
+              };
             };
           };
         };
@@ -295,9 +299,15 @@ const createEndpointList = function (item: {
           "content": {
             "application/json": {
               "schema": {
-                "type": "array",
-                "items": {
-                  "$ref": schemaRef(item, allowSchema)
+                "type": "object",
+                "required": ["items"],
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "$ref": schemaRef(item, allowSchema)
+                    }
+                  }
                 }
               }
             }
