@@ -241,5 +241,3 @@ export const schemaLinter = (name: string, schema: object): Extension => {
     }));
   });
 };
-
-export default schemaLinter;

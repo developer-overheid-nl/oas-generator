@@ -422,5 +422,3 @@ const createSchemas = (resources: [], allowSchema: boolean) => {
     };
   }, initialValue);
 };
-
-export default populateOpenApiSpec;
