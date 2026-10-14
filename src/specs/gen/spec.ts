@@ -1,4 +1,5 @@
 import { APPLICATION_OPENAPI_JSON_3_0_TYPE } from '../../constants';
+import { yamlEncoding } from '../../encodings';
 import { schemaLinter } from '../../schemaLinter';
 import { Spec, SpecResponseMapper } from '../../types';
 import { handleResponse } from '../../util';
@@ -37,9 +38,10 @@ const responseMapper: SpecResponseMapper = async responseText => {
 };
 
 const spec: Spec = {
-  name: 'Genrator',
+  name: 'Generator',
   slug: 'gen',
-  example: JSON.stringify(example, undefined, 2),
+  // The example stays JSON on disk (the CLI documents it), but opens as YAML.
+  example: yamlEncoding.stringify(example),
   linters: [{ name: GEN_LINTER_NAME, linter: schemaLinter(GEN_LINTER_NAME, schema) }],
   responseMapper,
 };

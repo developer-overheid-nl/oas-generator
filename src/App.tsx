@@ -11,20 +11,18 @@ interface Props {
 const App: FC<Props> = ({ spec }) => {
   return (
     <div className="flex flex-col h-screen">
-      <header className="flex justify-between items-center px-4 py-2 bg-slate-700 text-white">
-        <div>
-          <h1 className="text-lg font-medium">
-            <Link to="/">OAS Generator</Link>
-          </h1>
-        </div>
-        <div className="flex items-center">
-          <a href="https://github.com/developer-overheid-nl/oas-generator" target="_blank">
+      <header className="flex items-center justify-between gap-4 px-4 py-2 bg-slate-700 text-white">
+        <h1 className="min-w-0 truncate text-lg font-medium">
+          <Link to="/">OAS Generator</Link>
+        </h1>
+        <div className="flex shrink-0 items-center gap-2">
+          <a href="https://github.com/developer-overheid-nl/oas-generator" target="_blank" className="ml-1 flex items-center">
             <GitHubIcon />
           </a>
         </div>
       </header>
       <div className="flex-1 overflow-hidden">
-        <CodeEditor spec={spec} uri={undefined} />
+        <CodeEditor key={spec.slug} spec={spec} />
       </div>
     </div>
   );
