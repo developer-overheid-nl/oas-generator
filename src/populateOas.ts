@@ -113,7 +113,7 @@ const schemaRef = (item: { name: string; schema?: Record<string, unknown> | stri
   if (allowSchema && typeof item['schema'] === 'string') {
     return item['schema'];
   }
-  return `#/components/schemas/${toUppercase(item['name'])}`;
+  return `#/components/schemas/${upperCamelCase(item['name'])}`;
 };
 
 const createPaths = (resources: [], allowSchema: boolean, componentRefs: ComponentRefs) => {

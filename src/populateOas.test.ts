@@ -22,6 +22,7 @@ type GeneratedDocument = {
       }
     >
   >;
+  components: Record<string, Record<string, unknown>>;
 };
 
 const generate = (input: Record<string, unknown>): GeneratedDocument =>
@@ -95,6 +96,14 @@ describe('populateOpenApiSpec', () => {
     expect(output.paths['/repositories/{id}'].delete.responses).toEqual({
       '204': { $ref: `${legacyComponentsUrl}#/responses/204` },
       '404': { $ref: `${legacyComponentsUrl}#/responses/404` },
+    });
+  });
+
+  it('references the schema component by the name it is defined under', () => {
+    const output = generate({ ...baseInput, resources: [{ name: 'dataset-version', plural: 'dataset-versions' }] });
+    expect(output.components.schemas).toHaveProperty('DatasetVersion');
+    expect(output.paths['/dataset-versions/{id}'].get.responses['200'].content['application/json'].schema).toEqual({
+      $ref: '#/components/schemas/DatasetVersion',
     });
   });
 
