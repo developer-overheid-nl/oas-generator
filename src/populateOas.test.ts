@@ -149,4 +149,33 @@ describe('input schema', () => {
   it('rejects a resource schema for OAS 3.0', () => {
     expect(validateInput({ ...withSchema, oasVersion: '3.0' })).toBe(false);
   });
+  it('accepts the base input', () => {
+    expect(validateInput(baseInput)).toBe(true);
+  });
+
+  it('rejects unknown keys at the root', () => {
+    expect(validateInput({ ...baseInput, version: '1.0.0' })).toBe(false);
+  });
+
+  it('rejects unknown keys in contact', () => {
+    expect(validateInput({ ...baseInput, contact: { ...baseInput.contact, phone: '0612345678' } })).toBe(false);
+  });
+
+  it('rejects unknown keys in a resource', () => {
+    expect(validateInput({ ...baseInput, resources: [{ name: 'repository', plural: 'repositories', filter: ['status'] }] })).toBe(false);
+  });
+
+  it('allows any keywords inside an inline resource schema', () => {
+    const input = {
+      ...baseInput,
+      resources: [
+        {
+          name: 'repository',
+          plural: 'repositories',
+          schema: { type: 'object', properties: { id: { type: 'string' } }, 'x-custom': true },
+        },
+      ],
+    };
+    expect(validateInput(input)).toBe(true);
+  });
 });

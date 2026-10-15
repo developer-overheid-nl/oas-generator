@@ -54,6 +54,10 @@ Pin a branch or tag with a `#` suffix (e.g. `github:developer-overheid-nl/oas-ge
 | `contact`     | yes      | `name`, `email` and `url` of the contact.                      |
 | `resources`   | yes      | Array of resources (at least one).                             |
 
+The input is validated strictly: unknown keys at the root, in `contact` or in a
+resource are rejected. Only an inline `schema` may contain any keywords, since it
+is a JSON schema itself.
+
 Each resource has a `name` and `plural`, an optional `readonly` boolean, and an
 optional `schema`. A `schema` is **not allowed when `oasVersion` is `"3.0"`** and
 can be either an inline JSON schema (object) or a URL string pointing to an
