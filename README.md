@@ -62,6 +62,12 @@ referenced locally; an external schema (URL) is referenced directly with a
 `$ref` from the operations (no local component). When omitted, a default schema
 with an `id` property is generated under `components/schemas`.
 
+A resource can also have optional `filters`, an array of strings. Each filter
+becomes an optional query parameter (type `string`) on the collection endpoint
+(`GET /{plural}`), named in lowerCamelCase (`created_at` becomes `createdAt`),
+with a default description. Filters must be unique, but are not checked against
+the resource schema.
+
 Collection endpoints (`GET /{plural}`) return an object with the resources
 wrapped in an `items` array (`{ "items": [...] }`) instead of a bare array, so
 the response can be extended later (for example with paging metadata) without a
