@@ -1,4 +1,4 @@
-import { kebabCase, upperCamelCase } from 'case-anything';
+import { camelCase, kebabCase, upperCamelCase } from 'case-anything';
 
 export const populateOpenApiSpec = (inputJson: string) => {
   const content = JSON.parse(inputJson) as {
@@ -15,6 +15,7 @@ export const populateOpenApiSpec = (inputJson: string) => {
       plural: string;
       readonly?: boolean;
       schema?: Record<string, unknown> | string;
+      filters?: string[];
     }[];
   };
 
@@ -276,6 +277,7 @@ const createEndpointList = function (
     plural: string;
     readonly?: boolean;
     schema?: Record<string, unknown> | string;
+    filters?: string[];
   },
   allowSchema: boolean,
   componentRefs: ComponentRefs,
@@ -286,6 +288,7 @@ const createEndpointList = function (
       description: string;
       summary: string;
       tags: string[];
+      parameters?: FilterParameter[];
       responses: {
         '200': {
           headers: {
@@ -350,6 +353,11 @@ const createEndpointList = function (
     },
   };
 
+  const filterParameters = createFilterParameters(item);
+  if (filterParameters.length > 0) {
+    endpointList.get.parameters = filterParameters;
+  }
+
   if (!item.readonly) {
     endpointList['post'] = {
       operationId: `create${upperCamelCase(item['name'])}`,
@@ -381,6 +389,30 @@ const createEndpointList = function (
 
   return endpointList;
 };
+
+type FilterParameter = {
+  name: string;
+  in: 'query';
+  description: string;
+  required: false;
+  schema: { type: 'string' };
+};
+
+/**
+ * Turns the resource's filters into optional lowerCamelCase query parameters
+ * on its collection. Filters are not checked against the resource schema.
+ */
+const createFilterParameters = (item: { plural: string; filters?: string[] }): FilterParameter[] =>
+  (item.filters ?? []).map(filter => {
+    const name = camelCase(filter);
+    return {
+      name,
+      in: 'query',
+      description: `Filter de ${item['plural']} op ${name}.`,
+      required: false,
+      schema: { type: 'string' },
+    };
+  });
 
 const createSchemas = (resources: [], allowSchema: boolean) => {
   const initialValue = {};

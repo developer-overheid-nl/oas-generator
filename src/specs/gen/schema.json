@@ -64,6 +64,12 @@
             "type": "boolean",
             "description": "When true, only read operations are generated for this resource."
           },
+          "filters": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 },
+            "uniqueItems": true,
+            "description": "Filters on the collection. Each filter becomes an optional lowerCamelCase query parameter on GET /{plural}."
+          },
           "schema": {
             "description": "JSON schema for the resource (OAS 3.1 only): either an inline JSON schema, or a URL to an external JSON schema.",
             "oneOf": [
