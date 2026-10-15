@@ -75,3 +75,30 @@
     @apply bg-blue-400;
   }
 }
+
+/* External resource schema URLs in the input editor, with a preview on hover. */
+@layer components {
+  .cm-schema-link {
+    @apply underline decoration-sky-600 underline-offset-2 cursor-pointer;
+  }
+
+  .schema-preview {
+    @apply w-[480px] max-w-[80vw] text-xs;
+  }
+
+  .schema-preview-header {
+    @apply flex items-baseline justify-between gap-3 px-3 py-2 border-b border-slate-200 bg-slate-50 text-slate-600;
+  }
+
+  .schema-preview-header a {
+    @apply font-semibold text-sky-700 underline hover:text-sky-900;
+  }
+
+  .schema-preview-content {
+    @apply max-h-80 overflow-auto m-0 px-3 py-2 font-mono text-slate-800;
+  }
+
+  .schema-preview-error {
+    @apply m-0 px-3 py-2 text-red-700;
+  }
+}
