@@ -5,6 +5,7 @@
   "description": "Syntax of the input document for the OAS Generator.",
   "type": "object",
   "required": ["title", "description", "contact", "resources"],
+  "additionalProperties": false,
   "properties": {
     "oasVersion": {
       "enum": ["3.0", "3.1"],
@@ -24,6 +25,7 @@
     "contact": {
       "type": "object",
       "required": ["name", "email", "url"],
+      "additionalProperties": false,
       "properties": {
         "name": {
           "type": "string",
@@ -49,6 +51,7 @@
       "items": {
         "type": "object",
         "required": ["name", "plural"],
+        "additionalProperties": false,
         "properties": {
           "name": {
             "type": "string",
