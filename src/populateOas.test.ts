@@ -18,6 +18,7 @@ type GeneratedDocument = {
     Record<
       string,
       {
+        parameters?: unknown[];
         responses: Record<string, { $ref?: string; headers?: unknown; content: Record<string, { schema: unknown }> }>;
       }
     >
@@ -148,5 +149,66 @@ describe('input schema', () => {
 
   it('rejects a resource schema for OAS 3.0', () => {
     expect(validateInput({ ...withSchema, oasVersion: '3.0' })).toBe(false);
+  });
+});
+
+describe('filters', () => {
+  const withFilters = (filters: string[]): Record<string, unknown> => ({
+    ...baseInput,
+    resources: [{ name: 'repository', plural: 'repositories', filters }],
+  });
+
+  it('adds each filter as a lowerCamelCase query parameter on the collection', () => {
+    const output = generate(withFilters(['created_at', 'Owner Name', 'status']));
+    expect(output.paths['/repositories'].get.parameters).toEqual([
+      {
+        name: 'createdAt',
+        in: 'query',
+        description: 'Filter de repositories op createdAt.',
+        required: false,
+        schema: { type: 'string' },
+      },
+      {
+        name: 'ownerName',
+        in: 'query',
+        description: 'Filter de repositories op ownerName.',
+        required: false,
+        schema: { type: 'string' },
+      },
+      {
+        name: 'status',
+        in: 'query',
+        description: 'Filter de repositories op status.',
+        required: false,
+        schema: { type: 'string' },
+      },
+    ]);
+  });
+
+  it('does not add filters to the single resource endpoint', () => {
+    const output = generate(withFilters(['status']));
+    expect(output.paths['/repositories/{id}'].get.parameters).toBeUndefined();
+  });
+
+  it('omits parameters when there are no filters', () => {
+    expect(generate(baseInput).paths['/repositories'].get.parameters).toBeUndefined();
+    expect(generate(withFilters([])).paths['/repositories'].get.parameters).toBeUndefined();
+  });
+
+  it('does not check filters against the resource schema', () => {
+    const input = {
+      ...baseInput,
+      resources: [{ name: 'repository', plural: 'repositories', schema: { type: 'object' }, filters: ['unknownField'] }],
+    };
+    expect(validateInput(input)).toBe(true);
+    expect(generate(input).paths['/repositories'].get.parameters).toHaveLength(1);
+  });
+
+  it.each([
+    ['duplicate', ['status', 'status']],
+    ['empty', ['']],
+    ['non-string', [42]],
+  ])('rejects %s filters', (_label, filters) => {
+    expect(validateInput({ ...baseInput, resources: [{ name: 'repository', plural: 'repositories', filters }] })).toBe(false);
   });
 });
