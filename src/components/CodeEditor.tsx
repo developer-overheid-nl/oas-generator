@@ -8,6 +8,7 @@ import { FC, useMemo, useState } from 'react';
 import { convertContent, detectEncoding, Encoding, EncodingId, jsonEncoding, yamlEncoding } from '../encodings';
 import { useScrollbarWidth } from '../hooks';
 import { populateOpenApiSpec } from '../populateOas';
+import { schemaLinks } from '../schemaLinks';
 import { Spec } from '../types';
 import { groupBy, groupBySource } from '../util';
 import FormatToggle from './FormatToggle';
@@ -87,7 +88,7 @@ const CodeEditor: FC<Props> = ({ spec }) => {
           value={content}
           height="100%"
           style={{ height: '100%' }}
-          extensions={[lintGutter(), ...LANGUAGE_EXTENSIONS[inputEncoding.id], ...linters.map(l => l.linter)]}
+          extensions={[lintGutter(), ...LANGUAGE_EXTENSIONS[inputEncoding.id], ...linters.map(l => l.linter), schemaLinks()]}
           onCreateEditor={setInputView}
           onUpdate={viewUpdate => {
             viewUpdate.transactions.forEach(transaction => {
