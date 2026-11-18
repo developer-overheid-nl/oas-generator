@@ -160,6 +160,7 @@ const createEndpointSingle = function (
           description: string;
           content: { 'application/json': { schema: { $ref: string } } };
         };
+        '400': { $ref: string };
         '404': { $ref: string };
       };
     };
@@ -185,6 +186,7 @@ const createEndpointSingle = function (
       tags: string[];
       responses: {
         '204': { $ref: string };
+        '400': { $ref: string };
         '404': { $ref: string };
       };
     };
@@ -214,6 +216,9 @@ const createEndpointSingle = function (
               },
             },
           },
+        },
+        '400': {
+          $ref: componentRefs.badRequest,
         },
         '404': {
           $ref: componentRefs.notFound,
@@ -261,6 +266,9 @@ const createEndpointSingle = function (
         '204': {
           $ref: componentRefs.noContent,
         },
+        '400': {
+          $ref: componentRefs.badRequest,
+        },
         '404': {
           $ref: componentRefs.notFound,
         },
@@ -302,6 +310,7 @@ const createEndpointList = function (
             };
           };
         };
+        '400'?: { $ref: string };
       };
     };
     post?: {
@@ -354,8 +363,11 @@ const createEndpointList = function (
   };
 
   const filterParameters = createFilterParameters(item);
+  // Every GET and DELETE with parameters can receive invalid input, so it
+  // gets a 400. The collection only has parameters when it has filters.
   if (filterParameters.length > 0) {
     endpointList.get.parameters = filterParameters;
+    endpointList.get.responses['400'] = { $ref: componentRefs.badRequest };
   }
 
   if (!item.readonly) {

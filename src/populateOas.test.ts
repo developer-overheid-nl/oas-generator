@@ -97,6 +97,7 @@ describe('populateOpenApiSpec', () => {
     });
     expect(output.paths['/repositories/{id}'].delete.responses).toEqual({
       '204': { $ref: `${commonComponentsUrl}#/components/responses/NoContent` },
+      '400': { $ref: `${commonComponentsUrl}#/components/responses/BadRequest` },
       '404': { $ref: `${commonComponentsUrl}#/components/responses/NotFound` },
     });
   });
@@ -113,6 +114,7 @@ describe('populateOpenApiSpec', () => {
     });
     expect(output.paths['/repositories/{id}'].delete.responses).toEqual({
       '204': { $ref: `${legacyComponentsUrl}#/responses/204` },
+      '400': { $ref: `${legacyComponentsUrl}#/responses/400` },
       '404': { $ref: `${legacyComponentsUrl}#/responses/404` },
     });
   });
@@ -122,6 +124,13 @@ describe('populateOpenApiSpec', () => {
     expect(output.components.schemas).toHaveProperty('DatasetVersion');
     expect(output.paths['/dataset-versions/{id}'].get.responses['200'].content['application/json'].schema).toEqual({
       $ref: '#/components/schemas/DatasetVersion',
+    });
+  });
+
+  it.each(['get', 'delete'])('lets %s on a single resource return 400, because it has an id parameter', method => {
+    const output = generate(baseInput);
+    expect(output.paths['/repositories/{id}'][method].responses['400']).toEqual({
+      $ref: 'https://static.developer.overheid.nl/openapi-components/adr/2.2/common.yaml#/components/responses/BadRequest',
     });
   });
 
@@ -217,6 +226,16 @@ describe('filters', () => {
   it('does not add filters to the single resource endpoint', () => {
     const output = generate(withFilters(['status']));
     expect(output.paths['/repositories/{id}'].get.parameters).toBeUndefined();
+  });
+
+  it('lets the collection return 400 when it has filters', () => {
+    expect(generate(withFilters(['status'])).paths['/repositories'].get.responses['400']).toEqual({
+      $ref: 'https://static.developer.overheid.nl/openapi-components/adr/2.2/common.yaml#/components/responses/BadRequest',
+    });
+  });
+
+  it('does not let the collection return 400 without filters', () => {
+    expect(generate(baseInput).paths['/repositories'].get.responses['400']).toBeUndefined();
   });
 
   it('omits parameters when there are no filters', () => {
