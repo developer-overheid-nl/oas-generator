@@ -104,4 +104,4 @@ Versioning, the changelog, and releases are driven by [Changesets](https://chang
 
 3. **Release.** When the version pull request lands on `main`, the workflow finds a `package.json` version that has no `v<version>` tag yet. It builds, lints, and tests, creates the `v<version>` tag with a GitHub release whose notes are that version's `CHANGELOG.md` section, and deploys the web UI to GitHub Pages. Starting the workflow by hand (**Actions** → **Release** → **Run workflow** on `main`) does the same as a push. To retry a failed release, use **Re-run failed jobs**.
 
-The build output (`dist`) is not committed; GitHub Pages must be set to deploy from **GitHub Actions**.
+The build output (`docs`) is not committed; GitHub Pages must be set to deploy from **GitHub Actions**.

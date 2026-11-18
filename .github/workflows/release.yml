@@ -125,7 +125,7 @@ jobs:
       - uses: actions/upload-pages-artifact@v5
         if: ${{ !contains(env.TAG, '-') }}
         with:
-          path: dist
+          path: docs
       - uses: actions/deploy-pages@v5
         if: ${{ !contains(env.TAG, '-') }}
         id: deployment
