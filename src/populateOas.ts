@@ -160,7 +160,6 @@ const createEndpointSingle = function (
           description: string;
           content: { 'application/json': { schema: { $ref: string } } };
         };
-        '400': { $ref: string };
         '404': { $ref: string };
       };
     };
@@ -186,7 +185,6 @@ const createEndpointSingle = function (
       tags: string[];
       responses: {
         '204': { $ref: string };
-        '400': { $ref: string };
         '404': { $ref: string };
       };
     };
@@ -216,9 +214,6 @@ const createEndpointSingle = function (
               },
             },
           },
-        },
-        '400': {
-          $ref: componentRefs.badRequest,
         },
         '404': {
           $ref: componentRefs.notFound,
@@ -265,9 +260,6 @@ const createEndpointSingle = function (
       responses: {
         '204': {
           $ref: componentRefs.noContent,
-        },
-        '400': {
-          $ref: componentRefs.badRequest,
         },
         '404': {
           $ref: componentRefs.notFound,
@@ -363,8 +355,9 @@ const createEndpointList = function (
   };
 
   const filterParameters = createFilterParameters(item);
-  // Every GET and DELETE with parameters can receive invalid input, so it
-  // gets a 400. The collection only has parameters when it has filters.
+  // ADR /core/problem-invalid-input: a GET or DELETE with parameters must be
+  // able to return a 400. Path parameters do not count, so only the collection
+  // gets one, and only when it has filters as query parameters.
   if (filterParameters.length > 0) {
     endpointList.get.parameters = filterParameters;
     endpointList.get.responses['400'] = { $ref: componentRefs.badRequest };

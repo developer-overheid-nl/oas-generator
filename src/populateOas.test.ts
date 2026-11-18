@@ -97,7 +97,6 @@ describe('populateOpenApiSpec', () => {
     });
     expect(output.paths['/repositories/{id}'].delete.responses).toEqual({
       '204': { $ref: `${commonComponentsUrl}#/components/responses/NoContent` },
-      '400': { $ref: `${commonComponentsUrl}#/components/responses/BadRequest` },
       '404': { $ref: `${commonComponentsUrl}#/components/responses/NotFound` },
     });
   });
@@ -114,7 +113,6 @@ describe('populateOpenApiSpec', () => {
     });
     expect(output.paths['/repositories/{id}'].delete.responses).toEqual({
       '204': { $ref: `${legacyComponentsUrl}#/responses/204` },
-      '400': { $ref: `${legacyComponentsUrl}#/responses/400` },
       '404': { $ref: `${legacyComponentsUrl}#/responses/404` },
     });
   });
@@ -127,11 +125,8 @@ describe('populateOpenApiSpec', () => {
     });
   });
 
-  it.each(['get', 'delete'])('lets %s on a single resource return 400, because it has an id parameter', method => {
-    const output = generate(baseInput);
-    expect(output.paths['/repositories/{id}'][method].responses['400']).toEqual({
-      $ref: 'https://static.developer.overheid.nl/openapi-components/adr/2.2/common.yaml#/components/responses/BadRequest',
-    });
+  it.each(['get', 'delete'])('does not let %s on a single resource return 400, because id is a path parameter', method => {
+    expect(generate(baseInput).paths['/repositories/{id}'][method].responses['400']).toBeUndefined();
   });
 
   it('lets PUT return 404 for a resource that does not exist', () => {
