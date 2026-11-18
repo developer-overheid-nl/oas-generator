@@ -21,7 +21,9 @@
     "generate": "tsx src/cli.ts",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest"
+    "test": "vitest",
+    "changeset": "changeset",
+    "version-packages": "changeset version"
   },
   "dependencies": {
     "@codemirror/lang-json": "^6.0.2",
@@ -41,6 +43,7 @@
     "react-router-dom": "^7.18.2"
   },
   "devDependencies": {
+    "@changesets/cli": "^3.0.3",
     "@eslint/js": "^10.0.1",
     "@tailwindcss/postcss": "^4.1.15",
     "@types/node": "^26.6.4",

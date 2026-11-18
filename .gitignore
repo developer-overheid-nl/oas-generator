@@ -9,6 +9,8 @@ lerna-debug.log*
 
 node_modules
 dist
+# Web UI build output, deployed to GitHub Pages by the Release workflow
+docs
 dist-ssr
 *.local
 
