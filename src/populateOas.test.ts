@@ -125,6 +125,10 @@ describe('populateOpenApiSpec', () => {
     });
   });
 
+  it.each(['get', 'delete'])('does not let %s on a single resource return 400, because id is a path parameter', method => {
+    expect(generate(baseInput).paths['/repositories/{id}'][method].responses['400']).toBeUndefined();
+  });
+
   it('lets PUT return 404 for a resource that does not exist', () => {
     const output = generate(baseInput);
     expect(output.paths['/repositories/{id}'].put.responses['404']).toEqual({
@@ -217,6 +221,16 @@ describe('filters', () => {
   it('does not add filters to the single resource endpoint', () => {
     const output = generate(withFilters(['status']));
     expect(output.paths['/repositories/{id}'].get.parameters).toBeUndefined();
+  });
+
+  it('lets the collection return 400 when it has filters', () => {
+    expect(generate(withFilters(['status'])).paths['/repositories'].get.responses['400']).toEqual({
+      $ref: 'https://static.developer.overheid.nl/openapi-components/adr/2.2/common.yaml#/components/responses/BadRequest',
+    });
+  });
+
+  it('does not let the collection return 400 without filters', () => {
+    expect(generate(baseInput).paths['/repositories'].get.responses['400']).toBeUndefined();
   });
 
   it('omits parameters when there are no filters', () => {

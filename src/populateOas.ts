@@ -302,6 +302,7 @@ const createEndpointList = function (
             };
           };
         };
+        '400'?: { $ref: string };
       };
     };
     post?: {
@@ -354,8 +355,12 @@ const createEndpointList = function (
   };
 
   const filterParameters = createFilterParameters(item);
+  // ADR /core/problem-invalid-input: a GET or DELETE with parameters must be
+  // able to return a 400. Path parameters do not count, so only the collection
+  // gets one, and only when it has filters as query parameters.
   if (filterParameters.length > 0) {
     endpointList.get.parameters = filterParameters;
+    endpointList.get.responses['400'] = { $ref: componentRefs.badRequest };
   }
 
   if (!item.readonly) {
