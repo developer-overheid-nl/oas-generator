@@ -1,0 +1,125 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  version:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v6
+      # No dependency cache in jobs that hold write tokens.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '26'
+          package-manager-cache: false
+      - run: pnpm install --frozen-lockfile
+      - uses: changesets/action@v2
+        with:
+          version-script: pnpm version-packages
+          commit-message: 'chore(release): version packages'
+          pr-title: 'chore(release): version packages'
+
+  # Independent of pending changesets: a queued run for the version merge can be
+  # superseded by a later push, and that later run must still release the
+  # version commit, not its own.
+  check:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+      sha: ${{ steps.tag.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: tag
+        run: |
+          TAG="v$(node -p "require('./package.json').version")"
+          status=0
+          git ls-remote --exit-code --tags origin "refs/tags/$TAG" > /dev/null || status=$?
+          case $status in
+            0)
+              echo "$TAG is already released"
+              ;;
+            2)
+              SHA=$(git log -1 --format=%H -G'^[[:space:]]*"version":' -- package.json)
+              echo "Releasing $TAG from $SHA"
+              echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+              echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              exit "$status"
+              ;;
+          esac
+
+  release:
+    needs: check
+    if: needs.check.outputs.tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    env:
+      TAG: ${{ needs.check.outputs.tag }}
+      SHA: ${{ needs.check.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.check.outputs.sha }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '26'
+          package-manager-cache: false
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm dedupe --check
+      - run: pnpm build
+      - run: pnpm lint
+      - run: pnpm test run
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "GitHub release $TAG already exists"
+            exit 0
+          fi
+          touch CHANGELOG.md
+          awk -v heading="## ${TAG#v}" '$0 == heading { found = 1; next } /^## / && found { exit } found' CHANGELOG.md > notes.md
+          [[ -s notes.md ]] || echo "Release $TAG" > notes.md
+          PRERELEASE=()
+          [[ "$TAG" == *-* ]] && PRERELEASE=(--prerelease)
+          gh release create "$TAG" --target "$SHA" --title "$TAG" --notes-file notes.md "${PRERELEASE[@]}"
+      # Prereleases must not overwrite the live site.
+      - uses: actions/configure-pages@v6
+        if: ${{ !contains(env.TAG, '-') }}
+      - uses: actions/upload-pages-artifact@v5
+        if: ${{ !contains(env.TAG, '-') }}
+        with:
+          path: dist
+      - uses: actions/deploy-pages@v5
+        if: ${{ !contains(env.TAG, '-') }}
+        id: deployment

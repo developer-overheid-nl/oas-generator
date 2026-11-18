@@ -91,3 +91,17 @@ Start the development server:
 ```bash
 pnpm dev
 ```
+
+### Versioning & releasing
+
+Versioning, the changelog, and releases are driven by [Changesets](https://changesets.dev/). The package is not published to npm; a release creates a GitHub release and deploys the web UI to GitHub Pages.
+
+1. **Add a changeset with your change.** Run `pnpm changeset`, pick the bump (`major` / `minor` / `patch`), and write a one-line summary. This creates a `.changeset/<name>.md` file; commit it with your PR. Omit only for changes that don't affect the generator or the web UI (CI, internal docs, tests).
+
+2. **Merge the version pull request.** Every push to `main` runs the Release workflow (`.github/workflows/release.yml`). While changesets are pending, it opens or updates a `chore(release): version packages` pull request that runs `pnpm version-packages`: it consumes the pending `.changeset/*.md` files, bumps `package.json`, and prepends the summaries to `CHANGELOG.md`. Merge it when you want to release. Don't hand-edit the `version` field; Changesets owns it.
+
+   GitHub doesn't run the Build workflow on pull requests opened by the workflow token, so the version pull request shows no checks. The release job builds, lints, and tests anyway; close and reopen the pull request if you want the checks on it.
+
+3. **Release.** When the version pull request lands on `main`, the workflow finds a `package.json` version that has no `v<version>` tag yet. It builds, lints, and tests, creates the `v<version>` tag with a GitHub release whose notes are that version's `CHANGELOG.md` section, and deploys the web UI to GitHub Pages. Starting the workflow by hand (**Actions** → **Release** → **Run workflow** on `main`) does the same as a push. To retry a failed release, use **Re-run failed jobs**.
+
+The build output (`dist`) is not committed; GitHub Pages must be set to deploy from **GitHub Actions**.
