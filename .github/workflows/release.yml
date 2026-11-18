@@ -53,6 +53,12 @@ jobs:
       - id: tag
         run: |
           TAG="v$(node -p "require('./package.json').version")"
+          # 0.0.0 is the version from before Changesets; the first release is
+          # the first version pull request.
+          if [[ "$TAG" == "v0.0.0" ]]; then
+            echo "Nothing to release before the first version pull request"
+            exit 0
+          fi
           status=0
           git ls-remote --exit-code --tags origin "refs/tags/$TAG" > /dev/null || status=$?
           case $status in
